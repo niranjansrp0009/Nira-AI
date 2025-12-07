@@ -1,6 +1,6 @@
 import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
-const modelSelect = document.getElementById("model-select");
+const modelPillGroup = document.getElementById("model-pill-group");
 const startBtn = document.getElementById("start-btn");
 const statusText = document.getElementById("status-text");
 const chatBox = document.getElementById("chat-box");
@@ -14,6 +14,9 @@ let engine = null;
 let isEngineReady = false;
 let isLoadingModel = false;
 
+let currentModelId = null;
+let currentModelLabel = "Not started";
+
 let chatMessages = [
   {
     role: "system",
@@ -25,7 +28,7 @@ let chatMessages = [
   }
 ];
 
-// ✅ Only a few hand-picked models
+// only a few hand-picked models
 const PREFERRED_MODELS = [
   {
     id: "TinyLlama-1.1B-Chat-v0.4-q4f32_1-MLC-1k",
@@ -73,19 +76,22 @@ function setStats({ tokens, modelLabel }) {
   }
 }
 
-async function initEngine(selectedModelId, humanLabel) {
+async function initEngine() {
+  if (!currentModelId) {
+    setStatus("Please pick a model first.");
+    return;
+  }
   if (isLoadingModel || isEngineReady) return;
 
   isLoadingModel = true;
   startBtn.disabled = true;
-  modelSelect.disabled = true;
   sendBtn.disabled = true;
 
   setStatus(
-    `Downloading and preparing "${humanLabel}". ` +
+    `Downloading and preparing "${currentModelLabel}". ` +
       "This can take a few minutes the first time..."
   );
-  setStats({ tokens: 0, modelLabel: humanLabel });
+  setStats({ tokens: 0, modelLabel: currentModelLabel });
 
   const initProgressCallback = (progress) => {
     const pct = Math.round((progress.progress || 0) * 100);
@@ -95,7 +101,7 @@ async function initEngine(selectedModelId, humanLabel) {
 
   try {
     engine = new webllm.MLCEngine({ initProgressCallback });
-    await engine.reload(selectedModelId);
+    await engine.reload(currentModelId);
     isEngineReady = true;
     setStatus("Nira AI is ready! Ask any study question below.");
     startBtn.textContent = "Model ready";
@@ -105,7 +111,6 @@ async function initEngine(selectedModelId, humanLabel) {
     setStatus(
       "Error while loading the model. Please refresh the page and try again."
     );
-    modelSelect.disabled = false;
     startBtn.disabled = false;
   } finally {
     isLoadingModel = false;
@@ -152,7 +157,7 @@ async function sendMessage() {
       }
     }
 
-    setStats({ tokens: totalTokens, modelLabel: currentModelLabelEl.textContent });
+    setStats({ tokens: totalTokens, modelLabel: currentModelLabel });
     chatMessages.push({ role: "assistant", content: reply });
   } catch (err) {
     console.error(err);
@@ -163,46 +168,61 @@ async function sendMessage() {
   }
 }
 
-function setupModelDropdown() {
+function setupModelPills() {
   const allModels = webllm.prebuiltAppConfig?.model_list || [];
+  let modelsToUse = [];
 
-  const preferred = [];
   for (const pref of PREFERRED_MODELS) {
-    const record = allModels.find((m) => m.model_id === pref.id);
-    if (record) preferred.push({ ...pref, record });
+    if (allModels.find((m) => m.model_id === pref.id)) {
+      modelsToUse.push(pref);
+    }
   }
 
-  let listToUse = preferred;
-
-  // Fallback: if (for some reason) none of the above models exist
-  if (listToUse.length === 0) {
-    listToUse = allModels.slice(0, 4).map((record) => ({
-      id: record.model_id,
-      label: record.model_id,
-      record
+  if (modelsToUse.length === 0 && allModels.length > 0) {
+    modelsToUse = allModels.slice(0, 4).map((m) => ({
+      id: m.model_id,
+      label: m.model_id
     }));
   }
 
-  modelSelect.innerHTML = "";
-  listToUse.forEach((m, idx) => {
-    const opt = document.createElement("option");
-    opt.value = m.id;
-    opt.textContent = m.label;
-    if (idx === 0) opt.selected = true;
-    modelSelect.appendChild(opt);
+  modelPillGroup.innerHTML = "";
+
+  modelsToUse.forEach((m, idx) => {
+    const btn = document.createElement("button");
+    btn.className = "model-pill";
+    if (idx === 0) btn.classList.add("active");
+    btn.dataset.modelId = m.id;
+    btn.textContent = m.label;
+    modelPillGroup.appendChild(btn);
+
+    if (idx === 0) {
+      currentModelId = m.id;
+      currentModelLabel = m.label;
+      setStats({ tokens: 0, modelLabel: currentModelLabel });
+    }
   });
 
-  if (listToUse[0]) {
-    currentModelLabelEl.textContent = listToUse[0].label;
-  }
+  modelPillGroup.addEventListener("click", (e) => {
+    const target = e.target;
+    if (!target.classList.contains("model-pill")) return;
+
+    const id = target.dataset.modelId;
+    const label = target.textContent;
+
+    currentModelId = id;
+    currentModelLabel = label;
+    setStats({ tokens: 0, modelLabel: currentModelLabel });
+
+    document
+      .querySelectorAll(".model-pill")
+      .forEach((b) => b.classList.remove("active"));
+    target.classList.add("active");
+  });
 }
 
 function wireEvents() {
   startBtn.addEventListener("click", () => {
-    const selectedId = modelSelect.value;
-    const selectedLabel =
-      modelSelect.options[modelSelect.selectedIndex]?.textContent || selectedId;
-    initEngine(selectedId, selectedLabel);
+    initEngine();
   });
 
   sendBtn.addEventListener("click", () => {
@@ -225,6 +245,6 @@ function wireEvents() {
   });
 }
 
-// Initialize
-setupModelDropdown();
+// init
+setupModelPills();
 wireEvents();
