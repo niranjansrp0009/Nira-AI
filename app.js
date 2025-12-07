@@ -1,230 +1,230 @@
 import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
-/*************** WebLLM logic ***************/
+const modelSelect = document.getElementById("model-select");
+const startBtn = document.getElementById("start-btn");
+const statusText = document.getElementById("status-text");
+const chatBox = document.getElementById("chat-box");
+const userInput = document.getElementById("user-input");
+const sendBtn = document.getElementById("send-btn");
+const tokenCountEl = document.getElementById("token-count");
+const currentModelLabelEl = document.getElementById("current-model-label");
+const chips = document.querySelectorAll(".chip");
 
-// System prompt specialised for education
-const messages = [
+let engine = null;
+let isEngineReady = false;
+let isLoadingModel = false;
+
+let chatMessages = [
   {
     role: "system",
     content:
-      "You are Nira AI, a friendly Indian study assistant. Your job is to explain concepts clearly for: " +
-      "1) school students (classes 6–12, CBSE/State board), 2) college students, 3) IT / coding learners, " +
-      "4) UPSC and other government exam aspirants, and 5) other competitive exam students. " +
-      "Always explain step by step using very simple language. When a topic is from maths, show worked examples. " +
-      "When a topic is from science or economics, give definitions, key points and real examples from India if relevant. " +
-      "If the user message is not about studies, answer briefly and bring them back to education or personal growth. " +
-      "You can reply in English and also understand common Indian English phrases."
+      "You are Nira AI, a friendly, encouraging study assistant for Indian students. " +
+      "You give clear, step-by-step explanations for school, college, IT, UPSC, and other exam topics. " +
+      "Use simple language first, then add extra depth if the student asks. " +
+      "Support English and popular Indian languages."
   }
 ];
 
-const availableModels = webllm.prebuiltAppConfig.model_list.map((m) => m.model_id);
-
-// Use the same default model as the official simple-chat example
-let selectedModel = "TinyLlama-1.1B-Chat-v0.4-q4f32_1-MLC-1k";
-
-// Callback function for initializing progress
-function updateEngineInitProgressCallback(report) {
-  console.log("initialize", report.progress, report.text);
-  const status = document.getElementById("download-status");
-  if (status) {
-    status.textContent = report.text;
+// ✅ Only a few hand-picked models
+const PREFERRED_MODELS = [
+  {
+    id: "TinyLlama-1.1B-Chat-v0.4-q4f32_1-MLC-1k",
+    label: "TinyLlama 1.1B – Fast (Lite)"
+  },
+  {
+    id: "Phi-3-mini-4k-instruct-q4f16_1-MLC-1k",
+    label: "Phi-3 Mini – Balanced"
+  },
+  {
+    id: "Llama-3.2-3B-Instruct-q4f16_1-MLC-1k",
+    label: "Llama-3.2 3B – Higher quality"
+  },
+  {
+    id: "Qwen3-0.6B-q4f16_1-MLC",
+    label: "Qwen3 0.6B – Multilingual"
   }
-}
+];
 
-// Create engine instance
-const engine = new webllm.MLCEngine();
-engine.setInitProgressCallback(updateEngineInitProgressCallback);
-
-async function initializeWebLLMEngine() {
-  const downloadButton = document.getElementById("download");
-  const sendButton = document.getElementById("send");
-  const status = document.getElementById("download-status");
-
-  if (downloadButton) downloadButton.disabled = true;
-  if (sendButton) sendButton.disabled = true;
-
-  if (status) {
-    status.classList.remove("hidden");
-    status.textContent = "Starting download of free study model. Please wait...";
-  }
-
-  selectedModel = document.getElementById("model-selection").value || selectedModel;
-  const config = {
-    temperature: 0.7,
-    top_p: 0.9
-  };
-  await engine.reload(selectedModel, config);
-
-  if (status) {
-    status.textContent =
-      "Model is ready! Now you can chat with Nira AI. First answer may still take a few seconds.";
-  }
-  if (sendButton) sendButton.disabled = false;
-  if (downloadButton) downloadButton.disabled = false;
-}
-
-async function streamingGenerating(messages, onUpdate, onFinish, onError) {
-  try {
-    let curMessage = "";
-    const completion = await engine.chat.completions.create({
-      stream: true,
-      messages
-    });
-    for await (const chunk of completion) {
-      const curDelta = chunk.choices[0].delta.content;
-      if (curDelta) {
-        curMessage += curDelta;
-      }
-      onUpdate(curMessage);
-    }
-    const finalMessage = await engine.getMessage();
-    onFinish(finalMessage);
-  } catch (err) {
-    onError(err);
-  }
-}
-
-/*************** UI logic ***************/
-
-function appendMessage(message) {
-  const chatBox = document.getElementById("chat-box");
-  if (!chatBox) return;
-
+function appendMessage(role, text) {
   const container = document.createElement("div");
-  container.classList.add("message-container");
-  const newMessage = document.createElement("div");
-  newMessage.classList.add("message");
-  newMessage.textContent = message.content;
+  container.className =
+    "message-container " + (role === "user" ? "user" : "assistant");
 
-  if (message.role === "user") {
-    container.classList.add("user");
-  } else {
-    container.classList.add("assistant");
-  }
+  const bubble = document.createElement("div");
+  bubble.className = "message";
+  bubble.textContent = text;
 
-  container.appendChild(newMessage);
+  container.appendChild(bubble);
   chatBox.appendChild(container);
-  chatBox.scrollTop = chatBox.scrollHeight; // Scroll to latest message
+  chatBox.scrollTop = chatBox.scrollHeight;
+  return bubble;
 }
 
-function updateLastMessage(content) {
-  const chatBox = document.getElementById("chat-box");
-  if (!chatBox) return;
-  const messageDoms = chatBox.querySelectorAll(".message");
-  const lastMessageDom = messageDoms[messageDoms.length - 1];
-  if (!lastMessageDom) return;
-  lastMessageDom.textContent = content;
+function setStatus(text) {
+  if (statusText) statusText.textContent = text;
 }
 
-function onMessageSend() {
-  const inputEl = document.getElementById("user-input");
-  const sendButton = document.getElementById("send");
+function setStats({ tokens, modelLabel }) {
+  if (typeof tokens === "number" && tokenCountEl) {
+    tokenCountEl.textContent = tokens.toString();
+  }
+  if (modelLabel && currentModelLabelEl) {
+    currentModelLabelEl.textContent = modelLabel;
+  }
+}
 
-  if (!inputEl || !sendButton) return;
+async function initEngine(selectedModelId, humanLabel) {
+  if (isLoadingModel || isEngineReady) return;
 
-  const input = inputEl.value.trim();
-  if (input.length === 0) {
+  isLoadingModel = true;
+  startBtn.disabled = true;
+  modelSelect.disabled = true;
+  sendBtn.disabled = true;
+
+  setStatus(
+    `Downloading and preparing "${humanLabel}". ` +
+      "This can take a few minutes the first time..."
+  );
+  setStats({ tokens: 0, modelLabel: humanLabel });
+
+  const initProgressCallback = (progress) => {
+    const pct = Math.round((progress.progress || 0) * 100);
+    const stage = progress.text || "Preparing model...";
+    setStatus(`Model setup: ${pct}% – ${stage}`);
+  };
+
+  try {
+    engine = new webllm.MLCEngine({ initProgressCallback });
+    await engine.reload(selectedModelId);
+    isEngineReady = true;
+    setStatus("Nira AI is ready! Ask any study question below.");
+    startBtn.textContent = "Model ready";
+    sendBtn.disabled = false;
+  } catch (err) {
+    console.error(err);
+    setStatus(
+      "Error while loading the model. Please refresh the page and try again."
+    );
+    modelSelect.disabled = false;
+    startBtn.disabled = false;
+  } finally {
+    isLoadingModel = false;
+  }
+}
+
+async function sendMessage() {
+  if (!isEngineReady || !engine) {
+    setStatus('Please click "Start Nira AI" and wait for the model to finish loading.');
     return;
   }
 
-  const message = {
-    content: input,
-    role: "user"
-  };
+  const text = userInput.value.trim();
+  if (!text) return;
 
-  sendButton.disabled = true;
+  userInput.value = "";
+  appendMessage("user", text);
+  chatMessages.push({ role: "user", content: text });
 
-  messages.push(message);
-  appendMessage(message);
-  inputEl.value = "";
-  inputEl.setAttribute("placeholder", "Nira AI is thinking...");
+  const assistantBubble = appendMessage("assistant", "Thinking...");
+  sendBtn.disabled = true;
 
-  const aiMessage = {
-    content: "typing...",
-    role: "assistant"
-  };
-  appendMessage(aiMessage);
-
-  const onFinishGenerating = (finalMessage) => {
-    updateLastMessage(finalMessage);
-    sendButton.disabled = false;
-    inputEl.setAttribute("placeholder", "Ask Nira AI anything about your studies...");
-    engine.runtimeStatsText().then((statsText) => {
-      const statsEl = document.getElementById("chat-stats");
-      if (statsEl) {
-        statsEl.classList.remove("hidden");
-        statsEl.textContent = statsText;
-      }
+  try {
+    const chunks = await engine.chat.completions.create({
+      messages: chatMessages,
+      temperature: 0.8,
+      stream: true,
+      stream_options: { include_usage: true }
     });
-  };
 
-  streamingGenerating(messages, updateLastMessage, onFinishGenerating, (err) => {
+    let reply = "";
+    let totalTokens = 0;
+
+    assistantBubble.textContent = "";
+
+    for await (const chunk of chunks) {
+      const delta = chunk.choices[0]?.delta?.content || "";
+      reply += delta;
+      assistantBubble.textContent = reply;
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      if (chunk.usage) {
+        totalTokens = chunk.usage.total_tokens ?? totalTokens;
+      }
+    }
+
+    setStats({ tokens: totalTokens, modelLabel: currentModelLabelEl.textContent });
+    chatMessages.push({ role: "assistant", content: reply });
+  } catch (err) {
     console.error(err);
-    updateLastMessage("Sorry, something went wrong inside the local model. Please try again.");
-    sendButton.disabled = false;
-  });
-}
-
-/*************** Bindings ***************/
-
-function setupModelDropdown() {
-  const select = document.getElementById("model-selection");
-  if (!select) return;
-
-  availableModels.forEach((modelId) => {
-    const option = document.createElement("option");
-    option.value = modelId;
-    option.textContent = modelId;
-    select.appendChild(option);
-  });
-  // If default model exists in list, select it, otherwise keep first one
-  if (availableModels.includes(selectedModel)) {
-    select.value = selectedModel;
+    assistantBubble.textContent =
+      "Sorry, something went wrong while generating a reply. Please try again.";
+  } finally {
+    sendBtn.disabled = false;
   }
 }
 
-function setupQuickChips() {
-  const chips = document.querySelectorAll(".chip");
-  const inputEl = document.getElementById("user-input");
-  if (!chips || !inputEl) return;
+function setupModelDropdown() {
+  const allModels = webllm.prebuiltAppConfig?.model_list || [];
+
+  const preferred = [];
+  for (const pref of PREFERRED_MODELS) {
+    const record = allModels.find((m) => m.model_id === pref.id);
+    if (record) preferred.push({ ...pref, record });
+  }
+
+  let listToUse = preferred;
+
+  // Fallback: if (for some reason) none of the above models exist
+  if (listToUse.length === 0) {
+    listToUse = allModels.slice(0, 4).map((record) => ({
+      id: record.model_id,
+      label: record.model_id,
+      record
+    }));
+  }
+
+  modelSelect.innerHTML = "";
+  listToUse.forEach((m, idx) => {
+    const opt = document.createElement("option");
+    opt.value = m.id;
+    opt.textContent = m.label;
+    if (idx === 0) opt.selected = true;
+    modelSelect.appendChild(opt);
+  });
+
+  if (listToUse[0]) {
+    currentModelLabelEl.textContent = listToUse[0].label;
+  }
+}
+
+function wireEvents() {
+  startBtn.addEventListener("click", () => {
+    const selectedId = modelSelect.value;
+    const selectedLabel =
+      modelSelect.options[modelSelect.selectedIndex]?.textContent || selectedId;
+    initEngine(selectedId, selectedLabel);
+  });
+
+  sendBtn.addEventListener("click", () => {
+    sendMessage();
+  });
+
+  userInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
 
   chips.forEach((chip) => {
     chip.addEventListener("click", () => {
-      const prompt = chip.getAttribute("data-prompt") || "";
-      inputEl.value = prompt;
-      inputEl.focus();
-      inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+      const prompt = chip.getAttribute("data-prompt") || chip.textContent;
+      userInput.value = prompt;
+      userInput.focus();
     });
   });
 }
 
-function main() {
-  setupModelDropdown();
-  setupQuickChips();
-
-  const downloadButton = document.getElementById("download");
-  const sendButton = document.getElementById("send");
-  const inputEl = document.getElementById("user-input");
-
-  if (downloadButton) {
-    downloadButton.addEventListener("click", () => {
-      initializeWebLLMEngine();
-    });
-  }
-
-  if (sendButton) {
-    sendButton.disabled = true;
-    sendButton.addEventListener("click", () => onMessageSend());
-  }
-
-  if (inputEl) {
-    inputEl.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        onMessageSend();
-      }
-    });
-  }
-}
-
-document.addEventListener("DOMContentLoaded", main);
+// Initialize
+setupModelDropdown();
+wireEvents();
