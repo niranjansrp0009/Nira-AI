@@ -94,23 +94,44 @@ body {
 .model-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 0.8rem;
 }
 
-.model-controls label {
+.model-label {
   color: var(--text-soft);
 }
 
-/* compact dropdown pill */
-.model-controls select {
-  background: rgba(15, 23, 42, 0.9);
+/* small pills instead of big dropdown */
+.model-pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.model-pill {
   border-radius: 999px;
-  border: 1px solid var(--border);
-  padding: 2px 10px;   /* smaller vertically */
-  height: 34px;        /* fixed height */
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: rgba(15, 23, 42, 0.95);
+  padding: 4px 10px;
+  font-size: 0.78rem;
   color: var(--text-main);
-  font-size: 0.8rem;
+  cursor: pointer;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.model-pill:hover {
+  border-color: var(--accent);
+}
+
+.model-pill.active {
+  background: linear-gradient(135deg, #3b81f6, #1d4ed8);
+  border-color: transparent;
+  color: #f9fafb;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.7);
 }
 
 .model-controls button {
@@ -390,7 +411,7 @@ body {
 
   .chat-panel {
     order: 1;
-    max-height: none; /* let it grow naturally on smaller screens */
+    max-height: none;
   }
 
   .top-bar {
@@ -403,14 +424,6 @@ body {
     width: 100%;
     justify-content: space-between;
     flex-wrap: wrap;
-  }
-
-  .model-controls select {
-    flex: 1 1 140px;
-  }
-
-  .model-controls button {
-    margin-left: auto;
   }
 }
 
@@ -439,9 +452,12 @@ body {
     gap: 6px;
   }
 
-  .model-controls select {
+  .model-pill-group {
     width: 100%;
-    height: 34px; /* same compact height on phones */
+  }
+
+  .model-pill {
+    max-width: 100%;
   }
 
   .model-controls button {
@@ -451,4 +467,14 @@ body {
 
   .chat-panel {
     padding: 8px;
-    min-
+    min-height: 380px;
+  }
+
+  .chat-input-container {
+    padding: 6px 8px;
+  }
+
+  .message {
+    max-width: 92%;
+  }
+}
