@@ -1,90 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Nira AI - Smart Study Assistant</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <div class="app-shell">
-      <header class="top-bar">
-        <div class="brand">
-          <div class="logo-circle">N</div>
-          <div class="brand-text">
-            <h1>Nira AI</h1>
-            <p>Smart Study Assistant for Indian Students</p>
-          </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nira AI – Smart Study Assistant</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="top-bar">
+      <div class="brand">
+        <div class="logo-circle">N</div>
+        <div class="brand-text">
+          <h1>Nira AI</h1>
+          <p>Smart Study Assistant for Indian Students</p>
         </div>
-        <div class="model-controls">
-          <label for="model-selection">Model</label>
-          <select id="model-selection"></select>
-          <button id="download">Start Nira AI</button>
+      </div>
+      <div class="model-controls">
+        <label for="model-select">Model</label>
+        <select id="model-select"></select>
+        <button id="start-btn">Start Nira AI</button>
+      </div>
+    </header>
+
+    <section class="chat-layout">
+      <aside class="left-panel">
+        <div class="quick-prompts-title">Quick topics</div>
+        <div class="quick-prompts">
+          <button class="chip"
+                  data-prompt="Explain LCM in simple steps for a Class 8 student.">
+            School
+          </button>
+          <button class="chip"
+                  data-prompt="Give a 30-day study plan for college semester exams.">
+            College
+          </button>
+          <button class="chip"
+                  data-prompt="Help me understand a basic coding concept with example.">
+            IT / Coding
+          </button>
+          <button class="chip"
+                  data-prompt="Guide me with UPSC / govt exam preparation tips.">
+            UPSC / Govt Exams
+          </button>
+          <button class="chip"
+                  data-prompt="Explain any competitive exam topic in a simple way.">
+            Competitive Exams
+          </button>
         </div>
-      </header>
 
-      <main class="chat-layout">
-        <section class="left-panel">
-          <div class="quick-prompts-title">Quick topics</div>
-          <div class="quick-prompts">
-            <button class="chip" data-prompt="I am a school student. Explain this concept in very simple steps: ">
-              School
-            </button>
-            <button class="chip" data-prompt="I am a college student. Help me understand this topic with examples: ">
-              College
-            </button>
-            <button class="chip" data-prompt="I am an IT / coding learner. Teach me step by step: ">
-              IT / Coding
-            </button>
-            <button class="chip" data-prompt="I am preparing for UPSC / government exams. Explain this for my exam: ">
-              UPSC / Govt Exams
-            </button>
-            <button class="chip" data-prompt="I am preparing for competitive exams. Give formulas, tips and shortcuts for: ">
-              Competitive Exams
-            </button>
-          </div>
+        <div class="status-card">
+          <h2>Nira AI status</h2>
+          <p class="status-text" id="status-text">
+            Click "Start Nira AI" to download the model (one-time).
+            It may take a few minutes on first use.
+          </p>
+          <p class="status-note">
+            Nira AI runs completely on your device using local AI.
+            Your questions are not sent to any server.
+          </p>
+        </div>
+      </aside>
 
-          <div class="status-card">
-            <h2>Nira AI status</h2>
-            <p id="download-status" class="status-text">
-              Click “Start Nira AI” once to download the free study model. First
-              time may take a few minutes. After that it will be faster.
-            </p>
-            <p class="status-note">
-              Works directly in your browser using an open-source study model.
-              No API keys. No monthly bill. Performance depends on the device.
-            </p>
-          </div>
-        </section>
+      <section class="chat-panel">
+        <div id="chat-box" class="chat-box">
+          <div class="message-container assistant">
+            <div class="message">
+              Hi, I am <strong>Nira AI</strong> 🎓
 
-        <section class="chat-panel">
-          <div id="chat-box" class="chat-box">
-            <div class="message-container assistant">
-              <div class="message">
-                Hi, I am <strong>Nira AI</strong> 🎓<br />
-                Click “Start Nira AI”, wait for the model download to finish,
-                then ask me any study question in English or Indian languages.
-              </div>
+              Click "Start Nira AI", wait for the model download to finish,
+              then ask me any study question in English or Indian languages.
             </div>
           </div>
-          <div id="chat-stats" class="chat-stats hidden"></div>
-          <div class="chat-input-container">
-            <input
-              type="text"
-              id="user-input"
-              placeholder="Ask Nira AI anything about your studies..."
-              autocomplete="off"
-            />
-            <button id="send" disabled>Send</button>
-          </div>
-        </section>
-      </main>
-    </div>
+        </div>
 
-    <footer class="footer">
-      <span>Made for students by Niranjan Group • Uses free in-browser AI (WebLLM)</span>
-    </footer>
+        <div class="chat-stats" id="stats-bar">
+          Tokens: <span id="token-count">0</span>
+          · Model: <span id="current-model-label">Not started</span>
+        </div>
 
-    <script type="module" src="app.js"></script>
-  </body>
+        <div class="chat-input-container">
+          <input
+            id="user-input"
+            type="text"
+            placeholder="Ask Nira AI anything about your studies..."
+            autocomplete="off"
+          />
+          <button id="send-btn" disabled>Send</button>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="footer">
+    Nira AI runs with local WebLLM models in your browser.
+    First reply may be slower while the model warms up.
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
 </html>
