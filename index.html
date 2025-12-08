@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1"
+  />
   <title>Nira AI – Smart Study Assistant</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -17,111 +20,153 @@
           <p>Smart Study Assistant for Indian Students</p>
         </div>
       </div>
-      <button id="privacyButton" class="link-button">Privacy</button>
+      <button id="privacyButton" class="ghost-button">Privacy</button>
     </header>
 
     <main class="main-layout">
-      <!-- MODEL CARD -->
-      <section class="card model-card">
+      <!-- MODEL PANEL -->
+      <section class="card model-panel">
         <h2 class="section-title">Model</h2>
 
+        <!-- Model select row -->
         <label class="field-label" for="modelSelect">Choose AI model</label>
-        <select id="modelSelect" class="select"></select>
+        <div class="model-select-row">
+          <select id="modelSelect" class="model-select"></select>
+        </div>
+        <div class="model-meta-row">
+          <span id="modelApproxSize" class="model-meta">Approx. size: –</span>
+          <span id="statusChip" class="status-chip status-idle">Model not started</span>
+        </div>
 
-        <div id="modelInfo" class="model-info">Approx. size: –</div>
-
-        <div class="progress-wrap">
-          <div class="progress-bar-bg">
-            <div id="progressBar" class="progress-bar-fill"></div>
+        <!-- Download progress -->
+        <div class="progress-wrapper">
+          <div class="progress-track">
+            <div id="downloadProgressBar" class="progress-bar"></div>
           </div>
-          <div id="progressText" class="progress-text">
-            Model not started yet.
+          <div id="downloadProgressText" class="progress-text">
+            Model not downloading yet.
           </div>
         </div>
 
+        <!-- Start button -->
         <button id="startButton" class="primary-button">
           Start Nira AI
         </button>
+
+        <p id="statusText" class="status-helper">
+          Click “Start Nira AI”, wait for the model download to finish, then
+          ask any study question in English or Indian languages.
+        </p>
       </section>
 
-      <!-- CHAT CARD -->
-      <section class="card chat-card">
-        <h2 class="section-title">Hi, I am Nira AI 🎓</h2>
-        <p class="section-subtitle">
-          Click <strong>“Start Nira AI”</strong>, wait for the model download to
-          finish, then ask me any study question in English or Indian languages.
-        </p>
+      <!-- CHAT PANEL -->
+      <section class="card chat-panel">
+        <header class="chat-header">
+          <h2>Hi, I am Nira AI 🎓</h2>
+          <p>
+            I can help with school (CBSE, State board, ICSE), college subjects
+            (Engineering, Law, BBA, etc.), IT & Coding, and UPSC / other
+            competitive exams.
+          </p>
+        </header>
 
-        <ul class="bullet-list">
-          <li>School subjects (CBSE, State board, ICSE)</li>
-          <li>College topics (Engineering, Law, BBA, etc.)</li>
-          <li>IT &amp; Coding (Python, C, Java, etc.)</li>
-          <li>UPSC, SSC, Banking &amp; other competitive exams</li>
-        </ul>
-
-        <div id="systemBanner" class="system-banner hidden"></div>
-
+        <!-- Chat window -->
         <div id="chatWindow" class="chat-window"></div>
 
+        <!-- Token & model info -->
+        <div id="tokenInfo" class="token-info">
+          Tokens: 0 • Model: –
+        </div>
+
+        <!-- Input row -->
         <form id="chatForm" class="chat-input-row">
-          <input
+          <textarea
             id="userInput"
             class="chat-input"
-            type="text"
-            placeholder="Ask Nira AI anything about your studies…"
-            autocomplete="off"
-          />
-          <button
-            id="sendButton"
-            class="primary-button"
-            type="submit"
-            disabled
-          >
+            rows="2"
+            placeholder="Ask Nira AI anything about your studies..."
+          ></textarea>
+          <button id="sendButton" class="send-button" type="submit">
             Send
           </button>
         </form>
 
-        <div class="token-info" id="tokenInfo">
-          Tokens: 0 · Model: –
-        </div>
-
+        <!-- Quick topics -->
         <div class="quick-topics">
-          <button class="chip">School</button>
-          <button class="chip">College</button>
-          <button class="chip">IT / Coding</button>
-          <button class="chip">UPSC / Govt Exams</button>
+          <span class="quick-topics-label">Quick topics:</span>
+          <button class="chip" data-topic="School">
+            School
+          </button>
+          <button class="chip" data-topic="College">
+            College
+          </button>
+          <button class="chip" data-topic="IT / Coding">
+            IT / Coding
+          </button>
+          <button class="chip" data-topic="UPSC / Govt Exams">
+            UPSC / Govt Exams
+          </button>
+          <button class="chip" data-topic="Competitive Exams">
+            Competitive Exams
+          </button>
         </div>
       </section>
     </main>
+
+    <footer class="footer">
+      Nira AI Lite – runs models directly on your device using WebGPU.
+    </footer>
   </div>
 
   <!-- PRIVACY MODAL -->
-  <div id="privacyOverlay" class="modal-overlay hidden">
-    <div class="modal">
-      <h2>Privacy &amp; Data Policy</h2>
+  <div id="privacyModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <h2>Privacy & Content Policy</h2>
+      <p class="modal-app-name">Nira AI</p>
+
       <p>
-        Nira AI runs completely on your device using on-device AI models
-        powered by WebLLM. We do not collect, store, or upload your questions,
-        chat history, or personal data to any external server.
+        Nira AI runs completely on your device using on-device AI models.
+        We designed this app so that
+        <strong>your study chats stay on your own phone or browser.</strong>
       </p>
-      <ul>
+
+      <ul class="modal-list">
         <li>
-          All study questions and answers stay inside your browser / phone.
+          The app does <strong>not</strong> ask you to create an account or enter
+          personal details like name, email, phone number or address.
         </li>
-        <li>We do not require you to sign in or create an account.</li>
-        <li>We don’t use your data to train any AI models.</li>
         <li>
-          If you enable Google ads (AdMob / AdSense) in the future, those
-          services may collect anonymous device information (for example
-          advertising ID, app version, approximate location) to show relevant
-          ads. That data is processed by Google under their own privacy policy.
+          Your questions and answers are processed locally by the AI model that
+          is downloaded to your device. They are <strong>not</strong> sent to
+          our own server for storage or analysis.
+        </li>
+        <li>
+          We do not build user profiles, we do not track your study activity and
+          we do not sell or share your personal data with third parties.
+        </li>
+        <li>
+          Some technical data may be collected by Google Play Services and
+          Google AdMob (such as device information or advertising ID) in order
+          to show ads and keep the app free. This data is handled under
+          Google’s own privacy policy.
+        </li>
+        <li>
+          You are responsible for what you type into the app. Please avoid
+          entering highly sensitive information (for example, passwords, bank
+          details, or private legal case details).
         </li>
       </ul>
+
       <p>
-        If you clear your browser data or uninstall the app, your chat
-        history is removed from your device.
+        By using Nira AI, you agree that the app is for educational support
+        only and <strong>does not</strong> provide professional legal,
+        medical or financial advice.
       </p>
-      <button id="closePrivacy" class="secondary-button">Close</button>
+
+      <button id="privacyCloseButton" class="primary-button modal-close">
+        Close
+      </button>
     </div>
   </div>
 
