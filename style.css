@@ -439,7 +439,114 @@ body {
   font-size: 0.7rem;
   color: var(--text-soft);
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.footer-text {
+  opacity: 0.9;
+}
+
+.footer-link {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.footer-link:hover {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+/* PRIVACY MODAL */
+
+.privacy-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  z-index: 50;
+}
+
+.privacy-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(6px);
+}
+
+.privacy-dialog {
+  position: relative;
+  z-index: 51;
+  width: min(520px, 94%);
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: #020617;
+  padding: 16px 18px 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
+}
+
+.privacy-dialog h2 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.privacy-content {
+  font-size: 0.8rem;
+  color: var(--text-main);
+  line-height: 1.45;
+}
+
+.privacy-content h3 {
+  margin-top: 10px;
+  margin-bottom: 4px;
+  font-size: 0.86rem;
+}
+
+.privacy-content p {
+  margin-bottom: 8px;
+}
+
+.privacy-content ul {
+  margin-left: 18px;
+  margin-bottom: 8px;
+}
+
+.privacy-content li {
+  margin-bottom: 4px;
+}
+
+.primary-btn {
+  margin-top: 10px;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.7);
+}
+
+.primary-btn:hover {
+  filter: brightness(1.05);
+}
+
+.primary-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.6);
 }
 
 /* UTILS */
@@ -528,5 +635,10 @@ body {
 
   .message {
     max-width: 92%;
+  }
+
+  .footer {
+    justify-content: center;
+    text-align: center;
   }
 }
