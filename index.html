@@ -21,7 +21,7 @@
         <div class="model-label-wrapper">
           <span class="model-label">Model</span>
 
-          <button id="model-picker-btn" class="model-picker-btn">
+          <button id="model-picker-btn" class="model-picker-btn" type="button">
             <span id="model-picker-label">Loading models…</span>
             <span class="chevron">▼</span>
           </button>
@@ -29,7 +29,7 @@
           <div id="model-picker-panel" class="model-picker-panel"></div>
         </div>
 
-        <button id="start-btn">Start Nira AI</button>
+        <button id="start-btn" type="button">Start Nira AI</button>
       </div>
     </header>
 
@@ -67,7 +67,7 @@
           </p>
           <p class="status-note">
             Nira AI runs completely on your device using local AI.
-            Your questions are not sent to any server.
+            Your questions are not sent to any server we control.
           </p>
         </div>
       </aside>
@@ -96,16 +96,73 @@
             placeholder="Ask Nira AI anything about your studies..."
             autocomplete="off"
           />
-          <button id="send-btn" disabled>Send</button>
+          <button id="send-btn" disabled type="button">Send</button>
         </div>
       </section>
     </section>
   </main>
 
+  <!-- footer with link to privacy popup -->
   <footer class="footer">
-    Nira AI runs with local WebLLM models in your browser.
-    First reply may be slower while the model warms up.
+    <span class="footer-text">
+      Nira AI runs with local WebLLM models on your device. First reply may be slower while the model warms up.
+    </span>
+    <button id="privacy-link" class="footer-link" type="button">
+      Privacy Policy
+    </button>
   </footer>
+
+  <!-- privacy policy modal -->
+  <div id="privacy-modal" class="privacy-modal hidden">
+    <div class="privacy-backdrop"></div>
+    <div class="privacy-dialog">
+      <h2>Nira AI – Privacy &amp; Data Policy</h2>
+      <div class="privacy-content">
+        <p><strong>Nira AI Lite</strong> is developed by <strong>Niranjan Group</strong>. This app is designed as an
+          on-device study assistant for students.</p>
+
+        <h3>1. Data we (developer) collect</h3>
+        <ul>
+          <li>We do not create user accounts and we do not ask you for your name, email, phone number or address.</li>
+          <li>We do not collect or store your questions, answers or study content on our own servers.</li>
+          <li>All conversations with Nira AI Lite are processed <strong>locally on your device</strong> using on-device AI models.</li>
+        </ul>
+
+        <h3>2. Local storage on your device</h3>
+        <ul>
+          <li>The app may keep some information (such as recent chat history or settings) only on your device’s local storage / browser storage.</li>
+          <li>This information is not sent to us.</li>
+          <li>You can remove it at any time by clearing the app data / cache or uninstalling the app.</li>
+        </ul>
+
+        <h3>3. Ads and Google AdMob</h3>
+        <ul>
+          <li>Nira AI Lite shows ads using <strong>Google AdMob</strong>.</li>
+          <li>AdMob and its partners may collect limited information, such as device identifiers (for example, Advertising ID), approximate location, app usage data and crash information, in order to show, personalise and measure ads and to prevent fraud.</li>
+          <li>This data collection is controlled by Google, under Google’s own Privacy Policy and your Android / Google Play Services settings (for example, “Opt out of Ads Personalisation”).</li>
+          <li>We (Niranjan Group) do not have direct access to this raw data and we do not sell your personal data.</li>
+        </ul>
+
+        <h3>4. Children</h3>
+        <p>Nira AI Lite is made for students but is not specifically directed at children under 13. If you are a parent
+          or guardian and believe your child has shared personal information, please contact us and we will help.</p>
+
+        <h3>5. Your choices</h3>
+        <ul>
+          <li>You can clear the app data or uninstall the app at any time to remove data stored on your device.</li>
+          <li>By using Nira AI Lite, you agree to this privacy and data policy.</li>
+        </ul>
+
+        <h3>6. Contact</h3>
+        <p>If you have any questions about this policy, please contact us at:<br />
+          <strong>Contact us through Google Play Store, Maild ID in that.</strong></p>
+      </div>
+
+      <button id="privacy-close-btn" class="primary-btn" type="button">
+        Close
+      </button>
+    </div>
+  </div>
 
   <script type="module" src="app.js"></script>
 </body>
