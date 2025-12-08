@@ -16,9 +16,19 @@
           <p>Smart Study Assistant for Indian Students</p>
         </div>
       </div>
+
       <div class="model-controls">
-        <span class="model-label">Model</span>
-        <div id="model-pill-group" class="model-pill-group"></div>
+        <div class="model-label-wrapper">
+          <span class="model-label">Model</span>
+
+          <button id="model-picker-btn" class="model-picker-btn">
+            <span id="model-picker-label">Loading models…</span>
+            <span class="chevron">▼</span>
+          </button>
+
+          <div id="model-picker-panel" class="model-picker-panel"></div>
+        </div>
+
         <button id="start-btn">Start Nira AI</button>
       </div>
     </header>
