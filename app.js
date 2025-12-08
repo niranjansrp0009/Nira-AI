@@ -1,361 +1,275 @@
-import * as webllm from "https://esm.run/@mlc-ai/web-llm@0.2.41";
+// app.js – Nira AI Lite (WebLLM front-end)
+import * as webllm from "https://unpkg.com/@mlc-ai/web-llm@0.2.34/dist/index.js";
 
-/**
- * Nira AI model list (only 3 good ones)
- * IDs must match WebLLM prebuilt config.
- */
-const NIRA_MODELS = [
+// --- Model list (only 3, all relatively small) ---
+const MODELS = [
   {
-    id: "SmolLM2-360M-Instruct-q4f16_1-MLC",
-    label: "SmolLM 360M — Ultra Lite",
-    approxSizeMB: 350,
-    note: "Fastest & smallest – good for low-end devices."
+    id: "SmolLM-360M-Instruct-q4f16_1-MLC",
+    label: "SmolLM 360M – Ultra Lite",
+    sizeLabel: "~350 MB",
+    note: "Good for very low-end devices, basic answers."
   },
   {
-    id: "TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC-1k",
+    id: "TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC",
     label: "TinyLlama 1.1B – Fast (Lite)",
-    approxSizeMB: 700,
-    note: "Good balance of speed + quality."
+    sizeLabel: "~700 MB",
+    note: "Balanced quality vs. size."
   },
   {
-    id: "Phi-3-mini-4k-instruct-q4f16_1-MLC",
+    id: "Phi-3-mini-4k-instruct-q4f16_1-MLC-1k",
     label: "Phi-3 Mini – Balanced",
-    approxSizeMB: 1600,
-    note: "Best quality, but biggest download."
+    sizeLabel: "~1600 MB",
+    note: "Best quality, but largest download."
   }
 ];
 
-// ----- State -----
+// --- DOM elements ---
+const els = {
+  modelSelect: document.getElementById("model-select"),
+  modelSize: document.getElementById("model-size"),
+  modelNote: document.getElementById("model-note"),
+  downloadBar: document.getElementById("download-bar-fill"),
+  downloadStatus: document.getElementById("download-status"),
+  startBtn: document.getElementById("start-btn"),
+  chatLog: document.getElementById("chat-log"),
+  userInput: document.getElementById("user-input"),
+  sendBtn: document.getElementById("send-btn"),
+  tokenInfo: document.getElementById("token-info"),
+  privacyBtn: document.getElementById("privacy-btn"),
+  privacyModal: document.getElementById("privacy-modal"),
+  privacyClose: document.getElementById("privacy-close")
+};
+
 let engine = null;
-let currentModel = null;
-let isModelLoading = false;
-let conversationMessages = [];
-let totalTokensUsed = 0;
+let isModelReady = false;
+let currentModel = MODELS[0];
+let totalTokens = 0;
 
-// ----- DOM elements -----
-const modelSelect = document.getElementById("modelSelect");
-const modelApproxSize = document.getElementById("modelApproxSize");
-const startButton = document.getElementById("startButton");
-const statusText = document.getElementById("statusText");
-const statusChip = document.getElementById("statusChip");
-const progressBar = document.getElementById("downloadProgressBar");
-const progressText = document.getElementById("downloadProgressText");
+// --- Helpers ---
 
-const chatWindow = document.getElementById("chatWindow");
-const tokenInfo = document.getElementById("tokenInfo");
-const chatForm = document.getElementById("chatForm");
-const userInput = document.getElementById("userInput");
-const sendButton = document.getElementById("sendButton");
-const quickTopicButtons = document.querySelectorAll(".chip[data-topic]");
+function appendMessage(role, text) {
+  const wrapper = document.createElement("div");
+  wrapper.className = `chat-message ${role}`;
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = text;
+  wrapper.appendChild(bubble);
+  els.chatLog.appendChild(wrapper);
+  els.chatLog.scrollTop = els.chatLog.scrollHeight;
+}
 
-const privacyButton = document.getElementById("privacyButton");
-const privacyModal = document.getElementById("privacyModal");
-const privacyCloseButton = document.getElementById("privacyCloseButton");
-
-// ----- Helpers -----
-function setStatusChip(mode) {
-  statusChip.classList.remove("status-idle", "status-loading", "status-ready", "status-error");
-  if (mode === "loading") {
-    statusChip.textContent = "Model loading…";
-    statusChip.classList.add("status-loading");
-  } else if (mode === "ready") {
-    statusChip.textContent = "Model ready ✅";
-    statusChip.classList.add("status-ready");
-  } else if (mode === "error") {
-    statusChip.textContent = "Model error";
-    statusChip.classList.add("status-error");
-  } else {
-    statusChip.textContent = "Model not started";
-    statusChip.classList.add("status-idle");
+function setDownloadProgress(percent, text) {
+  const clamped = Math.max(0, Math.min(100, percent));
+  els.downloadBar.style.width = `${clamped}%`;
+  if (text) {
+    els.downloadStatus.textContent = text;
   }
 }
 
-function setProgress(percent, text) {
-  const safe = Math.max(0, Math.min(100, percent || 0));
-  progressBar.style.width = `${safe}%`;
-  progressBar.classList.remove("error");
-  progressText.textContent = text || `Downloading model… ${safe}%`;
-}
-
-function setProgressError(text) {
-  progressBar.classList.add("error");
-  progressBar.style.width = "100%";
-  progressText.textContent = text;
-}
-
-function resetProgress() {
-  progressBar.classList.remove("error");
-  progressBar.style.width = "0%";
-  progressText.textContent = "Model not downloading yet.";
-}
-
-/**
- * Add a system message (centered) – used for hints.
- */
-function addSystemMessage(text) {
-  const div = document.createElement("div");
-  div.className = "message-system";
-  div.textContent = text;
-  chatWindow.appendChild(div);
-  chatWindow.scrollTop = chatWindow.scrollHeight;
-}
-
-/**
- * Add user or assistant bubble.
- * type: "user" | "assistant"
- */
-function addBubble(type, text) {
-  const row = document.createElement("div");
-  row.className = `message-row ${type === "user" ? "user" : "assistant"}`;
-
-  const bubble = document.createElement("div");
-  bubble.className = "message-bubble " + (type === "user" ? "message-user" : "message-assistant");
-  bubble.textContent = text;
-
-  row.appendChild(bubble);
-  chatWindow.appendChild(row);
-  chatWindow.scrollTop = chatWindow.scrollHeight;
-  return bubble;
+function setStatusError(detail) {
+  const msg =
+    "Error while downloading or loading the model. " +
+    "Please check your internet connection and try again. " +
+    "If the problem continues, your device might not support this model.";
+  els.downloadStatus.textContent = msg;
+  console.error("Nira AI model error:", detail);
 }
 
 function updateTokenInfo() {
-  const modelLabel = currentModel ? currentModel.label : "–";
-  tokenInfo.textContent = `Tokens (this chat): ${totalTokensUsed} • Model: ${modelLabel}`;
+  els.tokenInfo.textContent = `Tokens: ${totalTokens} · Model: ${
+    isModelReady ? currentModel.label : "–"
+  }`;
 }
 
-/**
- * Create a new conversation system prompt
- */
-function resetConversation() {
-  conversationMessages = [
-    {
-      role: "system",
-      content:
-        "You are Nira AI, a friendly Indian study assistant. Help school, college, IT and UPSC students. Explain concepts in very simple step-by-step language. Prefer examples from Indian exams and syllabus. Answer briefly unless the topic really needs a longer explanation."
-    }
-  ];
-  totalTokensUsed = 0;
-  updateTokenInfo();
+function disableInteraction(loading) {
+  els.startBtn.disabled = loading;
+  els.sendBtn.disabled = loading || !isModelReady;
+  els.userInput.disabled = loading || !isModelReady;
 }
 
-// ----- Model select initialisation -----
-function populateModelSelect() {
-  modelSelect.innerHTML = "";
-  NIRA_MODELS.forEach((m, index) => {
+// --- Privacy modal ---
+
+els.privacyBtn.addEventListener("click", () => {
+  els.privacyModal.showModal();
+});
+
+els.privacyClose.addEventListener("click", () => {
+  els.privacyModal.close();
+});
+
+// --- Model selector init ---
+
+function populateModels() {
+  MODELS.forEach((m) => {
     const opt = document.createElement("option");
     opt.value = m.id;
-    opt.textContent = `${m.label}`;
-    if (index === 0) opt.selected = true;
-    modelSelect.appendChild(opt);
+    opt.textContent = m.label;
+    els.modelSelect.appendChild(opt);
   });
-  const first = NIRA_MODELS[0];
-  modelApproxSize.textContent = `Approx. size: ~${first.approxSizeMB} MB`;
+  els.modelSelect.value = MODELS[0].id;
+  onModelChange();
 }
 
 function onModelChange() {
-  const selectedId = modelSelect.value;
-  const meta = NIRA_MODELS.find(m => m.id === selectedId);
-  if (meta) {
-    modelApproxSize.textContent = `Approx. size: ~${meta.approxSizeMB} MB`;
-    statusText.textContent = meta.note;
-  }
+  const selectedId = els.modelSelect.value;
+  currentModel = MODELS.find((m) => m.id === selectedId) || MODELS[0];
+  els.modelSize.textContent = `Approx. size: ${currentModel.sizeLabel}`;
+  els.modelNote.textContent = currentModel.note;
+  setDownloadProgress(0, "Model not started yet.");
+  isModelReady = false;
+  disableInteraction(false);
+  els.sendBtn.disabled = true;
+  els.userInput.disabled = true;
+  updateTokenInfo();
 }
 
-// ----- Start model -----
-async function startSelectedModel() {
-  if (!navigator.gpu) {
-    setStatusChip("error");
-    setProgressError(
-      "WebGPU is not supported on this device/browser. Please use the latest Chrome or Edge."
+els.modelSelect.addEventListener("change", onModelChange);
+
+// --- WebGPU check ---
+
+function checkWebGPU() {
+  if (!("gpu" in navigator)) {
+    setDownloadProgress(0, "WebGPU is not supported on this browser/device.");
+    els.startBtn.disabled = true;
+    appendMessage(
+      "system",
+      "Your browser/device does not support WebGPU, so Nira AI Lite cannot run. Please try on latest Chrome or Edge on a newer device, or use the future Nira AI Pro (online) version."
     );
-    statusText.textContent =
-      "WebGPU is required to run Nira AI Lite fully on your device. Try on a newer phone or browser.";
-    return;
+    return false;
   }
+  return true;
+}
 
-  if (isModelLoading) {
-    return;
-  }
+// --- Load model ---
 
-  const selectedId = modelSelect.value;
-  const meta = NIRA_MODELS.find(m => m.id === selectedId) || NIRA_MODELS[0];
+async function loadModel() {
+  if (!checkWebGPU()) return;
 
-  // Reset UI
-  isModelLoading = true;
-  currentModel = null;
-  engine = null;
-  resetProgress();
-  setStatusChip("loading");
-  statusText.textContent = `Downloading ${meta.label}. This can take some time the first time. Please keep the app open.`;
-
-  chatWindow.innerHTML = "";
-  resetConversation();
-  addSystemMessage(
-    `Starting Nira AI with ${meta.label}. The model (~${meta.approxSizeMB} MB) is being downloaded to your device. This usually happens only once.`
-  );
-
-  startButton.disabled = true;
-  sendButton.disabled = true;
-  userInput.disabled = true;
-  modelSelect.disabled = true;
+  disableInteraction(true);
+  setDownloadProgress(2, "Starting Nira AI…");
 
   try {
-    const engineConfig = {
-      initProgressCallback: progress => {
-        // progress.progress is 0..1
-        const pct = Math.round((progress.progress || 0) * 100);
-        const text =
-          progress.text ||
-          `Downloading model files… ${pct}% (this happens only the first time).`;
-        setProgress(pct, text);
-      },
-      logLevel: "ERROR"
-    };
-
-    engine = await webllm.CreateMLCEngine(selectedId, engineConfig);
-    currentModel = meta;
-
-    setProgress(100, "Model downloaded ✔");
-    setStatusChip("ready");
-    statusText.textContent = `Nira AI is ready. Ask your first study question below.`;
-    addSystemMessage("New chat started ✅. Ask me any study question (school, college, IT, UPSC, etc.).");
-    updateTokenInfo();
-
-    sendButton.disabled = false;
-    userInput.disabled = false;
-  } catch (err) {
-    console.error("Failed to init model", err);
-    const raw = (err && err.message) ? err.message : String(err || "Unknown error");
-
-    let friendly =
-      "Error while downloading or loading the model. Please check your internet connection and try again. If the problem continues, try a smaller model.";
-    if (raw.toLowerCase().includes("webgpu")) {
-      friendly =
-        "Your device GPU cannot initialise WebGPU for this model. Try using the smallest model (SmolLM 360M) or a newer browser/device.";
+    if (!engine) {
+      engine = await webllm.CreateMLCEngine(currentModel.id, {
+        initProgressCallback: (report) => {
+          const pct = Math.floor((report.progress || 0) * 100);
+          const txt = report.text || "Preparing model…";
+          setDownloadProgress(pct, txt);
+        }
+      });
+    } else {
+      await engine.reload(currentModel.id, {
+        initProgressCallback: (report) => {
+          const pct = Math.floor((report.progress || 0) * 100);
+          const txt = report.text || "Preparing model…";
+          setDownloadProgress(pct, txt);
+        }
+      });
     }
 
-    setStatusChip("error");
-    setProgressError(friendly);
-    statusText.textContent = friendly;
-    addSystemMessage("❌ " + friendly);
-  } finally {
-    isModelLoading = false;
-    startButton.disabled = false;
-    modelSelect.disabled = false;
+    isModelReady = true;
+    setDownloadProgress(100, "Model ready. You can start asking questions.");
+    appendMessage(
+      "assistant",
+      `Nira AI is ready using ${currentModel.label}. Ask me any study question.`
+    );
+    disableInteraction(false);
+    els.sendBtn.disabled = false;
+    els.userInput.disabled = false;
+    updateTokenInfo();
+  } catch (err) {
+    isModelReady = false;
+    setDownloadProgress(0, "Model error.");
+    setStatusError(err);
+    disableInteraction(false);
   }
 }
 
-// ----- Chat handling -----
-async function handleChatSubmit(event) {
-  event.preventDefault();
-  const text = (userInput.value || "").trim();
-  if (!text) return;
+els.startBtn.addEventListener("click", () => {
+  loadModel();
+});
 
-  if (!engine || !currentModel) {
-    addSystemMessage('Please tap "Start Nira AI" first to load a model.');
-    return;
-  }
+// --- Chat ---
 
-  // Add user message to UI + history
-  addBubble("user", text);
-  userInput.value = "";
-  conversationMessages.push({ role: "user", content: text });
+async function sendMessage() {
+  const text = els.userInput.value.trim();
+  if (!text || !isModelReady || !engine) return;
 
-  // Prepare assistant bubble
-  const assistantBubble = addBubble("assistant", "Thinking…");
-  sendButton.disabled = true;
-  userInput.disabled = true;
+  appendMessage("user", text);
+  els.userInput.value = "";
+  disableInteraction(true);
 
   try {
-    const chunks = await engine.chat.completions.create({
-      messages: conversationMessages,
-      temperature: 0.7,
-      max_tokens: 512,
-      top_p: 0.9,
+    const messages = [
+      {
+        role: "system",
+        content:
+          "You are Nira AI, a friendly Indian study assistant. Explain concepts clearly in simple steps for school, college, IT and competitive exams. Prefer English but accept Indian languages too."
+      },
+      {
+        role: "user",
+        content: text
+      }
+    ];
+
+    const replyStream = await engine.chat.completions.create({
+      messages,
       stream: true,
-      stream_options: { include_usage: true }
+      temperature: 0.7,
+      max_tokens: 512
     });
 
-    let full = "";
-    let finalUsage = null;
+    let assistantText = "";
+    const assistantBubbleWrapper = document.createElement("div");
+    assistantBubbleWrapper.className = "chat-message assistant";
+    const assistantBubble = document.createElement("div");
+    assistantBubble.className = "bubble";
+    assistantBubbleWrapper.appendChild(assistantBubble);
+    els.chatLog.appendChild(assistantBubbleWrapper);
 
-    for await (const chunk of chunks) {
-      const delta = chunk.choices?.[0]?.delta?.content || "";
-      full += delta;
-      assistantBubble.textContent = full || "…";
+    for await (const chunk of replyStream) {
+      const part =
+        chunk.choices?.[0]?.delta?.content?.[0]?.text ||
+        chunk.choices?.[0]?.delta?.content ||
+        "";
+      assistantText += part;
+      assistantBubble.textContent = assistantText;
+      els.chatLog.scrollTop = els.chatLog.scrollHeight;
 
-      if (chunk.usage) {
-        finalUsage = chunk.usage;
+      if (chunk.usage?.total_tokens) {
+        totalTokens += chunk.usage.total_tokens;
+        updateTokenInfo();
       }
     }
-
-    if (!full) {
-      assistantBubble.textContent =
-        "Sorry, I couldn't generate a response. Please try again with a simpler question.";
-    }
-
-    conversationMessages.push({ role: "assistant", content: full });
-
-    if (finalUsage && typeof finalUsage.total_tokens === "number") {
-      totalTokensUsed += finalUsage.total_tokens;
-      updateTokenInfo();
-    }
   } catch (err) {
-    console.error("Chat error", err);
-    assistantBubble.textContent =
-      "Oops, something went wrong while generating the answer. Please try again.";
+    console.error("Chat error:", err);
+    appendMessage(
+      "assistant",
+      "Sorry, something went wrong while answering. Please ask again."
+    );
   } finally {
-    sendButton.disabled = false;
-    userInput.disabled = false;
-    userInput.focus();
+    disableInteraction(false);
   }
 }
 
-// ----- Quick topics -----
-function handleQuickTopicClick(event) {
-  const topic = event.currentTarget.getAttribute("data-topic");
-  if (!topic) return;
-
-  if (!engine || !currentModel) {
-    addSystemMessage(`First tap "Start Nira AI", then ask about ${topic}.`);
-    return;
+els.sendBtn.addEventListener("click", sendMessage);
+els.userInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
   }
+});
 
-  userInput.value = `I am a student. Explain an important concept from ${topic} in simple steps.`;
-  userInput.focus();
-}
-
-// ----- Privacy modal -----
-function openPrivacyModal() {
-  privacyModal.classList.remove("hidden");
-}
-
-function closePrivacyModal() {
-  privacyModal.classList.add("hidden");
-}
-
-// ----- Init -----
-function init() {
-  populateModelSelect();
-  onModelChange();
-  resetConversation();
-  addSystemMessage(
-    "Welcome to Nira AI Lite. Choose a model, tap “Start Nira AI” and wait for the first download to complete."
-  );
-
-  modelSelect.addEventListener("change", onModelChange);
-  startButton.addEventListener("click", startSelectedModel);
-  chatForm.addEventListener("submit", handleChatSubmit);
-
-  quickTopicButtons.forEach(btn => {
-    btn.addEventListener("click", handleQuickTopicClick);
+// Quick topic chips
+document.querySelectorAll(".chip[data-topic]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const topic = btn.getAttribute("data-topic");
+    els.userInput.value = `I am a student. Help me with this topic related to ${topic}: `;
+    els.userInput.focus();
   });
+});
 
-  privacyButton.addEventListener("click", openPrivacyModal);
-  privacyCloseButton.addEventListener("click", closePrivacyModal);
-  privacyModal
-    .querySelector(".modal-backdrop")
-    .addEventListener("click", closePrivacyModal);
-}
-
-document.addEventListener("DOMContentLoaded", init);
+// --- Init ---
+populateModels();
+checkWebGPU();
+updateTokenInfo();
