@@ -13,6 +13,11 @@ const tokenCountEl = document.getElementById("token-count");
 const currentModelLabelEl = document.getElementById("current-model-label");
 const chips = document.querySelectorAll(".chip");
 
+// privacy modal elements
+const privacyLink = document.getElementById("privacy-link");
+const privacyModal = document.getElementById("privacy-modal");
+const privacyCloseBtn = document.getElementById("privacy-close-btn");
+
 let engine = null;
 let isEngineReady = false;
 let isLoadingModel = false;
@@ -262,6 +267,24 @@ function wireEvents() {
       userInput.focus();
     });
   });
+
+  // privacy popup open / close
+  if (privacyLink && privacyModal && privacyCloseBtn) {
+    privacyLink.addEventListener("click", () => {
+      privacyModal.classList.remove("hidden");
+    });
+
+    privacyCloseBtn.addEventListener("click", () => {
+      privacyModal.classList.add("hidden");
+    });
+
+    // close if user clicks outside the dialog (on dark background)
+    privacyModal.addEventListener("click", (e) => {
+      if (e.target === privacyModal) {
+        privacyModal.classList.add("hidden");
+      }
+    });
+  }
 }
 
 // init
