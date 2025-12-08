@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Nira AI – Smart Study Assistant</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="app-shell">
-    <!-- Top bar / branding -->
+  <div class="app-shell">
+    <!-- Top bar -->
     <header class="top-bar">
       <div class="brand">
         <div class="logo-circle">N</div>
@@ -17,144 +17,110 @@
           <p>Smart Study Assistant for Indian Students</p>
         </div>
       </div>
-      <button id="openPrivacy" class="link-button">Privacy</button>
+      <button id="privacyButton" class="link-button">Privacy</button>
     </header>
 
-    <!-- Model + start card -->
-    <section class="card model-card">
-      <p class="section-label">Model</p>
+    <main class="main-layout">
+      <!-- MODEL CARD -->
+      <section class="card model-card">
+        <h2 class="section-title">Model</h2>
 
-      <div class="model-row">
-        <select id="modelSelect" class="model-select"></select>
-      </div>
+        <label class="field-label" for="modelSelect">Choose AI model</label>
+        <select id="modelSelect" class="select"></select>
 
-      <div class="model-meta">
-        <span id="modelSizeLabel" class="pill pill-soft">
-          Approx. size: —
-        </span>
-        <span id="modelStatusChip" class="pill">
-          Not started
-        </span>
-      </div>
+        <div id="modelInfo" class="model-info">Approx. size: –</div>
 
-      <button id="startButton" class="primary-button">
-        Start Nira AI
-      </button>
-
-      <div id="progressArea" class="progress-area hidden">
-        <div id="progressText" class="progress-text">
-          Model not started yet.
+        <div class="progress-wrap">
+          <div class="progress-bar-bg">
+            <div id="progressBar" class="progress-bar-fill"></div>
+          </div>
+          <div id="progressText" class="progress-text">
+            Model not started yet.
+          </div>
         </div>
-        <div class="progress-bar">
-          <div id="progressFill" class="progress-fill"></div>
-        </div>
-      </div>
-    </section>
 
-    <!-- Intro card -->
-    <section class="card intro-card">
-      <p class="intro-title">Hi, I am <span class="highlight">Nira AI 🎓</span></p>
-      <p class="intro-text">
-        Click <strong>"Start Nira AI"</strong>, wait for the model download to finish,
-        then ask me any study question in English or popular Indian languages.
+        <button id="startButton" class="primary-button">
+          Start Nira AI
+        </button>
+      </section>
+
+      <!-- CHAT CARD -->
+      <section class="card chat-card">
+        <h2 class="section-title">Hi, I am Nira AI 🎓</h2>
+        <p class="section-subtitle">
+          Click <strong>“Start Nira AI”</strong>, wait for the model download to
+          finish, then ask me any study question in English or Indian languages.
+        </p>
+
+        <ul class="bullet-list">
+          <li>School subjects (CBSE, State board, ICSE)</li>
+          <li>College topics (Engineering, Law, BBA, etc.)</li>
+          <li>IT &amp; Coding (Python, C, Java, etc.)</li>
+          <li>UPSC, SSC, Banking &amp; other competitive exams</li>
+        </ul>
+
+        <div id="systemBanner" class="system-banner hidden"></div>
+
+        <div id="chatWindow" class="chat-window"></div>
+
+        <form id="chatForm" class="chat-input-row">
+          <input
+            id="userInput"
+            class="chat-input"
+            type="text"
+            placeholder="Ask Nira AI anything about your studies…"
+            autocomplete="off"
+          />
+          <button
+            id="sendButton"
+            class="primary-button"
+            type="submit"
+            disabled
+          >
+            Send
+          </button>
+        </form>
+
+        <div class="token-info" id="tokenInfo">
+          Tokens: 0 · Model: –
+        </div>
+
+        <div class="quick-topics">
+          <button class="chip">School</button>
+          <button class="chip">College</button>
+          <button class="chip">IT / Coding</button>
+          <button class="chip">UPSC / Govt Exams</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- PRIVACY MODAL -->
+  <div id="privacyOverlay" class="modal-overlay hidden">
+    <div class="modal">
+      <h2>Privacy &amp; Data Policy</h2>
+      <p>
+        Nira AI runs completely on your device using on-device AI models
+        powered by WebLLM. We do not collect, store, or upload your questions,
+        chat history, or personal data to any external server.
       </p>
-      <ul class="intro-list">
-        <li>School subjects (CBSE, State board, ICSE)</li>
-        <li>College topics (Engineering, Law, BBA, etc.)</li>
-        <li>IT & Coding (Python, C, Java, etc.)</li>
-        <li>UPSC, SSC, Banking & other competitive exams</li>
-      </ul>
-    </section>
-
-    <!-- Chat card -->
-    <section class="card chat-card">
-      <div id="chatWindow" class="chat-window">
-        <!-- Messages will be injected here -->
-      </div>
-
-      <div class="chat-info-row">
-        <span id="tokenInfo">Tokens: 0</span>
-        <div class="chat-info-right">
-          <span id="currentModelInfo">Model: —</span>
-          <button id="newChatButton" class="tiny-button">New chat</button>
-        </div>
-      </div>
-
-      <form id="chatForm" class="chat-input-row">
-        <input
-          id="userInput"
-          type="text"
-          autocomplete="off"
-          placeholder="Ask Nira AI anything about your studies..."
-        />
-        <button id="sendButton" type="submit" disabled>Send</button>
-      </form>
-    </section>
-
-    <!-- Quick topics -->
-    <section class="card quick-card">
-      <p class="section-label">Quick topics</p>
-      <div class="chip-row">
-        <button class="chip quick" data-prompt="I am a school student. Help me with this topic in very simple steps: ">
-          School
-        </button>
-        <button class="chip quick" data-prompt="I am a college student. Explain this concept clearly with real-life examples: ">
-          College
-        </button>
-        <button class="chip quick" data-prompt="I am learning programming. Teach me this coding topic step by step: ">
-          IT / Coding
-        </button>
-        <button class="chip quick" data-prompt="I am preparing for UPSC / Govt exams. Explain this in exam-oriented points: ">
-          UPSC / Govt Exams
-        </button>
-        <button class="chip quick" data-prompt="I am preparing for competitive exams. Explain this topic with tricks and shortcuts: ">
-          Competitive Exams
-        </button>
-      </div>
-    </section>
-  </main>
-
-  <!-- Privacy modal -->
-  <div id="modalBackdrop" class="modal-backdrop hidden"></div>
-
-  <div id="privacyModal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Privacy & Content Policy</h2>
-      <p><strong>Nira AI</strong> is a study helper that runs completely inside your device using on-device AI models (WebLLM in the browser).</p>
-
-      <ul class="policy-list">
+      <ul>
         <li>
-          <strong>No account, no login.</strong> We do not ask for your name, email,
-          phone number or any other personal details.
+          All study questions and answers stay inside your browser / phone.
         </li>
+        <li>We do not require you to sign in or create an account.</li>
+        <li>We don’t use your data to train any AI models.</li>
         <li>
-          <strong>No server storage.</strong> Your questions and answers are processed
-          locally in your browser. We (the developer) do not receive, store or read
-          your chats on any server.
-        </li>
-        <li>
-          <strong>Data stays on your device.</strong> Chat history and downloaded model
-          files stay on the user’s device/browser storage and can be cleared by the user
-          (for example by clearing browser data / app data).
-        </li>
-        <li>
-          <strong>Ads & analytics.</strong> If AdMob or similar ad services are used in
-          the Android app, they may collect anonymous identifiers (like Advertising ID)
-          and basic device information to show relevant ads, according to their own
-          privacy policies.
-        </li>
-        <li>
-          <strong>Content responsibility.</strong> Nira AI is designed only for
-          educational purposes. Users should not use it to generate harmful, illegal,
-          or inappropriate content.
+          If you enable Google ads (AdMob / AdSense) in the future, those
+          services may collect anonymous device information (for example
+          advertising ID, app version, approximate location) to show relevant
+          ads. That data is processed by Google under their own privacy policy.
         </li>
       </ul>
-
-      <p class="policy-footer">
-        If you have any questions, you can contact the developer:
-        <strong>Niranjan S.R.P (Niranjan Group)</strong>.
+      <p>
+        If you clear your browser data or uninstall the app, your chat
+        history is removed from your device.
       </p>
-
       <button id="closePrivacy" class="secondary-button">Close</button>
     </div>
   </div>
