@@ -1,6 +1,9 @@
 import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
-const modelPillGroup = document.getElementById("model-pill-group");
+const modelPickerBtn = document.getElementById("model-picker-btn");
+const modelPickerLabel = document.getElementById("model-picker-label");
+const modelPickerPanel = document.getElementById("model-picker-panel");
+
 const startBtn = document.getElementById("start-btn");
 const statusText = document.getElementById("status-text");
 const chatBox = document.getElementById("chat-box");
@@ -28,7 +31,6 @@ let chatMessages = [
   }
 ];
 
-// only a few hand-picked models
 const PREFERRED_MODELS = [
   {
     id: "TinyLlama-1.1B-Chat-v0.4-q4f32_1-MLC-1k",
@@ -78,7 +80,7 @@ function setStats({ tokens, modelLabel }) {
 
 async function initEngine() {
   if (!currentModelId) {
-    setStatus("Please pick a model first.");
+    setStatus("Please select a model first.");
     return;
   }
   if (isLoadingModel || isEngineReady) return;
@@ -168,7 +170,7 @@ async function sendMessage() {
   }
 }
 
-function setupModelPills() {
+function setupModelPicker() {
   const allModels = webllm.prebuiltAppConfig?.model_list || [];
   let modelsToUse = [];
 
@@ -185,38 +187,55 @@ function setupModelPills() {
     }));
   }
 
-  modelPillGroup.innerHTML = "";
+  modelPickerPanel.innerHTML = "";
 
   modelsToUse.forEach((m, idx) => {
     const btn = document.createElement("button");
-    btn.className = "model-pill";
+    btn.className = "model-option";
     if (idx === 0) btn.classList.add("active");
     btn.dataset.modelId = m.id;
     btn.textContent = m.label;
-    modelPillGroup.appendChild(btn);
+    modelPickerPanel.appendChild(btn);
 
     if (idx === 0) {
       currentModelId = m.id;
       currentModelLabel = m.label;
+      modelPickerLabel.textContent = currentModelLabel;
       setStats({ tokens: 0, modelLabel: currentModelLabel });
     }
   });
 
-  modelPillGroup.addEventListener("click", (e) => {
-    const target = e.target;
-    if (!target.classList.contains("model-pill")) return;
+  // open / close dropdown
+  modelPickerBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    modelPickerPanel.classList.toggle("open");
+  });
 
-    const id = target.dataset.modelId;
-    const label = target.textContent;
+  // select model
+  modelPickerPanel.addEventListener("click", (e) => {
+    const btn = e.target.closest(".model-option");
+    if (!btn) return;
 
-    currentModelId = id;
-    currentModelLabel = label;
+    currentModelId = btn.dataset.modelId;
+    currentModelLabel = btn.textContent;
+    modelPickerLabel.textContent = currentModelLabel;
     setStats({ tokens: 0, modelLabel: currentModelLabel });
 
     document
-      .querySelectorAll(".model-pill")
+      .querySelectorAll(".model-option")
       .forEach((b) => b.classList.remove("active"));
-    target.classList.add("active");
+    btn.classList.add("active");
+    modelPickerPanel.classList.remove("open");
+  });
+
+  // close when clicking outside
+  document.addEventListener("click", (e) => {
+    if (
+      !modelPickerPanel.contains(e.target) &&
+      !modelPickerBtn.contains(e.target)
+    ) {
+      modelPickerPanel.classList.remove("open");
+    }
   });
 }
 
@@ -246,5 +265,5 @@ function wireEvents() {
 }
 
 // init
-setupModelPills();
+setupModelPicker();
 wireEvents();
