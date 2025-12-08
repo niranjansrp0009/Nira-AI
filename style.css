@@ -101,7 +101,8 @@ body {
 .secondary-button,
 .link-button,
 .chip,
-#sendButton {
+#sendButton,
+.tiny-button {
   border: none;
   outline: none;
   cursor: pointer;
@@ -147,6 +148,20 @@ body {
 
 .link-button:hover {
   background: rgba(148, 163, 184, 0.2);
+}
+
+.tiny-button {
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--text-soft);
+  font-size: 11px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+}
+
+.tiny-button:hover {
+  border-color: var(--accent);
+  color: #bfdbfe;
 }
 
 /* ---------- Model section ---------- */
@@ -304,6 +319,12 @@ body {
   margin-top: 6px;
   font-size: 11px;
   color: var(--text-soft);
+}
+
+.chat-info-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .chat-input-row {
