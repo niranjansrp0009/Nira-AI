@@ -1,4 +1,4 @@
-// Nira AI – WebLLM front-end (single file, ES module)
+// Nira AI – WebLLM front-end
 
 import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
@@ -18,6 +18,29 @@ const tokenInfo = document.getElementById("tokenInfo");
 const privacyButton = document.getElementById("privacyButton");
 const privacyOverlay = document.getElementById("privacyOverlay");
 const closePrivacy = document.getElementById("closePrivacy");
+
+/**
+ * Curated list of small-ish models we know work with WebLLM
+ * and that you actually saw in the dropdown earlier.
+ * Sizes are rough but good enough for display.
+ */
+const NIRA_MODELS = [
+  {
+    id: "SmolLM2-360M-Instruct-q4f16_1-MLC",
+    label: "SmolLM 360M – Ultra Lite",
+    sizeMB: 350
+  },
+  {
+    id: "TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC",
+    label: "TinyLlama 1.1B – Fast (Lite)",
+    sizeMB: 650
+  },
+  {
+    id: "Phi-3-mini-4k-instruct-q4f16_1-MLC-1k",
+    label: "Phi-3 Mini – Balanced",
+    sizeMB: 1200
+  }
+];
 
 const SYSTEM_PROMPT =
   "You are Nira AI, a friendly study assistant for Indian students. " +
@@ -66,90 +89,49 @@ function appendMessage(sender, content, type) {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-function shortLabelFromId(modelId) {
-  if (!modelId) return "–";
-  if (modelId.includes("TinyLlama")) return "TinyLlama 1.1B – Fast (Lite)";
-  if (modelId.toLowerCase().includes("phi-3")) return "Phi-3 Mini – Balanced";
-  if (modelId.toLowerCase().includes("qwen3") || modelId.toLowerCase().includes("qwen2"))
-    return "Qwen – Multilingual";
-  return modelId;
+function modelMetaById(id) {
+  return NIRA_MODELS.find((m) => m.id === id) || null;
 }
 
-function estimateMb(model) {
-  const bytes =
-    model.estimated_vram_bytes ??
-    model.vram_required_bytes ??
-    model.size_in_bytes ??
-    null;
-  if (!bytes) return null;
-  return Math.round(bytes / (1024 * 1024));
-}
-
-function friendlyLabel(model) {
-  const base = shortLabelFromId(model.model_id);
-  const mb = estimateMb(model);
-  return mb ? `${base} (~${mb} MB)` : base;
+function shortLabelFromId(id) {
+  const meta = modelMetaById(id);
+  return meta ? meta.label : id || "–";
 }
 
 function updateModelInfoFromSelect() {
-  const option = modelSelect.options[modelSelect.selectedIndex];
-  if (!option) {
+  const opt = modelSelect.options[modelSelect.selectedIndex];
+  if (!opt) {
     modelInfo.textContent = "Approx. size: –";
     return;
   }
-
-  const mbStr = option.getAttribute("data-size-mb");
+  const mbStr = opt.getAttribute("data-size-mb");
   if (mbStr) {
     modelInfo.textContent = `Approx. size: ~${mbStr} MB`;
   } else {
-    modelInfo.textContent = "Approx. size: unknown";
+    modelInfo.textContent = "Approx. size: –";
   }
 }
 
 /* -------------------- Model list init -------------------- */
 
-async function initModelList() {
-  try {
-    const all = webllm.prebuiltAppConfig.model_list || [];
-
-    // Filter to chat/instruct models and sort by size
-    const candidates = all
-      .filter((m) => {
-        const id = m.model_id.toLowerCase();
-        return (
-          id.includes("chat") ||
-          id.includes("instruct") ||
-          id.includes("mini")
-        );
-      })
-      .sort((a, b) => (estimateMb(a) || 1e12) - (estimateMb(b) || 1e12));
-
-    const shortlist = candidates.slice(0, 3); // only 3 models on UI
-
-    modelSelect.innerHTML = "";
-    shortlist.forEach((m) => {
-      const opt = document.createElement("option");
-      opt.value = m.model_id;
-      opt.textContent = friendlyLabel(m);
-      const mb = estimateMb(m);
-      if (mb) opt.setAttribute("data-size-mb", mb.toString());
-      modelSelect.appendChild(opt);
-    });
-
-    if (!shortlist.length) {
-      modelSelect.disabled = true;
-      startButton.disabled = true;
-      progressText.textContent =
-        "No compatible models found in this browser.";
-      return;
+function initModelList() {
+  modelSelect.innerHTML = "";
+  NIRA_MODELS.forEach((m) => {
+    const opt = document.createElement("option");
+    opt.value = m.id;
+    opt.textContent = m.label;
+    if (m.sizeMB) {
+      opt.setAttribute("data-size-mb", String(m.sizeMB));
     }
+    modelSelect.appendChild(opt);
+  });
 
-    updateModelInfoFromSelect();
-  } catch (err) {
-    console.error("Failed to load model list", err);
+  if (!NIRA_MODELS.length) {
     modelSelect.disabled = true;
     startButton.disabled = true;
-    progressText.textContent = "Error: cannot load model list.";
+    progressText.textContent = "No models configured.";
+  } else {
+    updateModelInfoFromSelect();
   }
 }
 
@@ -178,7 +160,7 @@ async function loadModel(modelId) {
         const text = report.text || "Downloading model…";
         progressBar.style.width = `${pct}%`;
         progressText.textContent = `${text} (${pct}%)`;
-      },
+      }
     });
 
     currentModelId = modelId;
@@ -224,7 +206,7 @@ async function sendMessage(text) {
     const reply = await engine.chat.completions.create({
       messages: chatHistory,
       temperature: 0.7,
-      max_tokens: 512,
+      max_tokens: 512
     });
 
     const choice = reply.choices?.[0]?.message;
