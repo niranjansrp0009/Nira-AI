@@ -31,7 +31,8 @@ You are Nira AI, a friendly, exam-focused study assistant for Indian students.
 - Help users from school, college, IT / coding, UPSC and other competitive exams.
 - Explain concepts step by step, using simple language first, then deeper details.
 - You can answer in English and popular Indian languages if the user writes in them.
-- Never give harmful, illegal, or adult content. Keep everything study-safe and respectful.
+- Do NOT generate nonsense or repeated words. Keep answers clear and focused.
+- Never give harmful, illegal, or adult content. Keep everything study-safe.
 `.trim()
 };
 
@@ -55,7 +56,8 @@ const els = {
   openPrivacy: document.getElementById("openPrivacy"),
   closePrivacy: document.getElementById("closePrivacy"),
   privacyModal: document.getElementById("privacyModal"),
-  modalBackdrop: document.getElementById("modalBackdrop")
+  modalBackdrop: document.getElementById("modalBackdrop"),
+  newChatButton: document.getElementById("newChatButton")
 };
 
 /* ------------------------ State ------------------------ */
@@ -96,7 +98,6 @@ function ensureEngine() {
 }
 
 function handleInitProgress(report) {
-  // report.progress is between 0 and 1
   const p = Math.max(0, Math.min(1, report.progress ?? 0));
   const percent = Math.round(p * 100);
 
@@ -127,7 +128,8 @@ async function startNira() {
   try {
     ensureEngine();
 
-    const samplingConfig = { temperature: 0.8, top_p: 0.95 };
+    // Slightly lower temperature + cap tokens to avoid nonsense
+    const samplingConfig = { temperature: 0.7, top_p: 0.9, max_tokens: 512 };
 
     await engine.reload(selectedModel.id, samplingConfig);
 
@@ -240,6 +242,18 @@ async function sendMessage(text) {
   }
 }
 
+/* ------------------------ New chat ------------------------ */
+
+function resetConversation() {
+  messages = [SYSTEM_MESSAGE];
+  els.chatWindow.innerHTML = "";
+  els.tokenInfo.textContent = "Tokens: 0";
+  appendMessage(
+    "assistant",
+    "New chat started ✅. Ask me any study question (school, college, IT, UPSC, etc.)."
+  );
+}
+
 /* ------------------------ Event bindings ------------------------ */
 
 els.modelSelect.addEventListener("change", () => {
@@ -267,6 +281,10 @@ els.quickChips.forEach((chip) => {
   });
 });
 
+els.newChatButton.addEventListener("click", () => {
+  resetConversation();
+});
+
 /* Privacy modal */
 function openPrivacyModal() {
   els.modalBackdrop.classList.remove("hidden");
@@ -283,7 +301,4 @@ els.modalBackdrop.addEventListener("click", closePrivacyModal);
 /* ------------------------ Bootstrap ------------------------ */
 
 initModelDropdown();
-appendMessage(
-  "assistant",
-  "Hi, I am Nira AI 🎓. Tap “Start Nira AI”, wait for the model to finish downloading, then ask me any study question!"
-);
+resetConversation();
