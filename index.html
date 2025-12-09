@@ -2,12 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+  />
   <title>Nira AI – Smart Study Assistant</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app-shell">
+    <!-- Top bar -->
     <header class="top-bar">
       <div class="brand">
         <div class="logo-circle">N</div>
@@ -16,118 +20,144 @@
           <p>Smart Study Assistant for Indian Students</p>
         </div>
       </div>
-      <button id="privacyBtn" class="privacy-btn">Privacy</button>
+      <button id="privacy-btn" class="ghost-btn">Privacy</button>
     </header>
 
+    <!-- Main layout: model + info -->
     <main class="main-layout">
-      <!-- LEFT: model control -->
-      <section class="panel model-panel">
-        <h2 class="panel-title">Model</h2>
+      <!-- MODEL PANEL -->
+      <section class="card model-card">
+        <h2 class="card-title">Model</h2>
 
-        <label class="field-label" for="modelSelect">Choose AI model</label>
-        <select id="modelSelect" class="select-input">
-          <!-- Filled by JS -->
-        </select>
-
-        <div class="size-row">
-          <span class="hint-label">Approx. size:</span>
-          <span id="modelSizeLabel" class="size-value">–</span>
+        <label class="field-label" for="model-select">Choose AI model</label>
+        <div class="select-row">
+          <select id="model-select"></select>
         </div>
 
-        <div class="progress-wrapper">
-          <div id="downloadProgress" class="progress-bar">
-            <div id="downloadProgressFill" class="progress-fill"></div>
-          </div>
-          <span id="progressText" class="progress-text">Model not started yet.</span>
+        <div id="model-size" class="meta-text">Approx. size: –</div>
+
+        <div id="progress-bar" class="progress-bar">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+        <div id="progress-text" class="meta-text">
+          Model not started yet.
         </div>
 
-        <button id="startBtn" class="primary-btn">Start Nira AI</button>
+        <button id="start-btn" class="primary-btn">Start Nira AI</button>
 
         <p class="tip-text">
-          Tip: start with the smallest model first. Download happens once and
-          is stored on your device.
+          Tip: start with the smallest model first. Download happens once and is
+          stored on your device.
         </p>
       </section>
 
-      <!-- RIGHT: chat -->
-      <section class="panel chat-panel">
-        <header class="chat-header">
-          <h2>Hi, I am Nira AI 🎓</h2>
-          <p>
-            I can help with school (CBSE, State board, ICSE), college subjects
-            (Engineering, Law, BBA, etc.), IT &amp; Coding, UPSC / other
-            competitive exams, and more.
-          </p>
-          <ul>
-            <li>Ask in English or popular Indian languages.</li>
-            <li>Runs directly on your device using WebGPU (Lite version).</li>
-            <li>Your study chats are <strong>not stored</strong> on any server.</li>
-          </ul>
-          <div class="note-box">
-            <strong>Nira AI Lite</strong> – downloads a small AI model to your
-            device one time. Internet is used only to fetch model files, not to
-            send your questions.
-          </div>
-        </header>
+      <!-- INFO PANEL -->
+      <section class="card info-card">
+        <h2 class="card-title">Hi, I am Nira AI 🎓</h2>
+        <p class="info-tagline">
+          I can help with school (CBSE, State board, ICSE), college (Engineering,
+          Law, BBA, etc.), IT &amp; Coding, UPSC / other competitive exams,
+          and more.
+        </p>
 
-        <div id="chatWindow" class="chat-window">
-          <div class="chat-message system">
-            <div class="bubble">
-              New chat started ✅. Ask me any study question (school, college,
-              IT, UPSC, etc.).
-            </div>
-          </div>
+        <ul class="bullet-list">
+          <li>Ask in English or popular Indian languages.</li>
+          <li>Runs directly on your device using WebGPU (Lite version).</li>
+          <li>Your study chats are <strong>not stored</strong> on any server.</li>
+        </ul>
+
+        <div class="info-banner">
+          <strong>Nira AI Lite</strong> – downloads a small AI model to your
+          device once. Internet is used only to fetch model files, not to send
+          your questions.
         </div>
 
-        <footer class="chat-input-row">
-          <div class="tokens-row">
-            <span id="tokenInfo">Tokens: 0 · Model: –</span>
-          </div>
-          <div class="input-row">
-            <textarea
-              id="userInput"
-              class="chat-input"
-              placeholder="Ask Nira AI anything about your studies..."
-              rows="2"
-            ></textarea>
-            <button id="sendBtn" class="primary-btn send-btn">Send</button>
-          </div>
-
-          <div class="quick-topics">
-            <button class="chip">School</button>
-            <button class="chip">College</button>
-            <button class="chip">IT / Coding</button>
-            <button class="chip">UPSC / Govt Exams</button>
-            <button class="chip">Competitive Exams</button>
-          </div>
-        </footer>
+        <div id="device-warning" class="warning hidden"></div>
       </section>
     </main>
 
-    <!-- Privacy modal -->
-    <div id="privacyModal" class="modal hidden">
-      <div class="modal-backdrop"></div>
-      <div class="modal-content">
-        <h2>Privacy &amp; Data</h2>
-        <p>
-          Nira AI Lite runs the AI model directly on your device using WebGPU.
-          We do <strong>not</strong> collect, store, or share any of your
-          questions or answers on our servers.
-        </p>
-        <ul>
-          <li>Your chats never leave your phone or browser.</li>
-          <li>Only anonymised data may be collected by Google AdMob (for ads).</li>
-          <li>
-            You can clear the browser data / app data at any time to remove all
-            cached models and chats from your device.
-          </li>
-        </ul>
-        <button id="closePrivacyBtn" class="primary-btn">Close</button>
+    <!-- CHAT PANEL -->
+    <section class="card chat-card">
+      <div class="chat-header">
+        New chat started ✅. Ask me any study question (school, college, IT, UPSC, etc.).
       </div>
+
+      <div id="chat-log" class="chat-log"></div>
+
+      <div id="chat-meta" class="meta-text"></div>
+
+      <div class="chat-input-row">
+        <input
+          id="user-input"
+          type="text"
+          placeholder="Ask Nira AI anything about your studies..."
+          autocomplete="off"
+        />
+        <button id="send-btn" class="primary-btn small" disabled>Send</button>
+      </div>
+
+      <div id="quick-topics" class="quick-topics">
+        <button class="chip"
+          data-prompt="Explain photosynthesis in very simple words for a class 7 student.">
+          School
+        </button>
+        <button class="chip"
+          data-prompt="Give me a quick overview of BBA marketing basics.">
+          College
+        </button>
+        <button class="chip"
+          data-prompt="Explain arrays in Python with a simple example.">
+          IT / Coding
+        </button>
+        <button class="chip"
+          data-prompt="How should I start preparing for UPSC prelims from zero?">
+          UPSC / Govt Exams
+        </button>
+      </div>
+    </section>
+
+    <footer class="footer">
+      Nira AI Lite – runs models directly on your device using WebGPU.
+    </footer>
+  </div>
+
+  <!-- PRIVACY MODAL -->
+  <div id="privacy-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <h2>Privacy &amp; Content Policy</h2>
+      <p>
+        Nira AI Lite is an on-device study assistant built for Indian students.
+        The app is designed to respect your privacy.
+      </p>
+      <ul>
+        <li>
+          The app does <strong>not</strong> collect, store, or upload your
+          study chats, questions, or personal data to any Nira AI server.
+        </li>
+        <li>
+          AI models are downloaded once to your device using WebLLM. These model
+          files are used only to run the AI locally on your browser / phone.
+        </li>
+        <li>
+          Any data you type stays inside your device’s browser storage and
+          memory. It is not sent to us for logging or analytics.
+        </li>
+        <li>
+          If you use this app inside another mobile app that shows ads (for
+          example, via Google AdMob), those ad networks may collect their own
+          anonymous usage data according to their privacy policies.
+        </li>
+      </ul>
+      <p>
+        By using Nira AI Lite, you agree to ask only legal and safe study
+        questions. Do not use the app for harmful, abusive, or illegal content.
+      </p>
+      <button id="privacy-close" class="primary-btn small">Close</button>
     </div>
   </div>
 
-  <!-- WebLLM + app -->
+  <!-- App logic -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
