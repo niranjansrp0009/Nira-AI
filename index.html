@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nira AI – Smart Study Assistant</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-bar">
+      <div class="brand">
+        <div class="logo-circle">N</div>
+        <div class="brand-text">
+          <h1>Nira AI</h1>
+          <p>Smart Study Assistant for Indian Students</p>
+        </div>
+      </div>
+      <button id="privacyBtn" class="privacy-btn">Privacy</button>
+    </header>
+
+    <main class="main-layout">
+      <!-- LEFT: model control -->
+      <section class="panel model-panel">
+        <h2 class="panel-title">Model</h2>
+
+        <label class="field-label" for="modelSelect">Choose AI model</label>
+        <select id="modelSelect" class="select-input">
+          <!-- Filled by JS -->
+        </select>
+
+        <div class="size-row">
+          <span class="hint-label">Approx. size:</span>
+          <span id="modelSizeLabel" class="size-value">–</span>
+        </div>
+
+        <div class="progress-wrapper">
+          <div id="downloadProgress" class="progress-bar">
+            <div id="downloadProgressFill" class="progress-fill"></div>
+          </div>
+          <span id="progressText" class="progress-text">Model not started yet.</span>
+        </div>
+
+        <button id="startBtn" class="primary-btn">Start Nira AI</button>
+
+        <p class="tip-text">
+          Tip: start with the smallest model first. Download happens once and
+          is stored on your device.
+        </p>
+      </section>
+
+      <!-- RIGHT: chat -->
+      <section class="panel chat-panel">
+        <header class="chat-header">
+          <h2>Hi, I am Nira AI 🎓</h2>
+          <p>
+            I can help with school (CBSE, State board, ICSE), college subjects
+            (Engineering, Law, BBA, etc.), IT &amp; Coding, UPSC / other
+            competitive exams, and more.
+          </p>
+          <ul>
+            <li>Ask in English or popular Indian languages.</li>
+            <li>Runs directly on your device using WebGPU (Lite version).</li>
+            <li>Your study chats are <strong>not stored</strong> on any server.</li>
+          </ul>
+          <div class="note-box">
+            <strong>Nira AI Lite</strong> – downloads a small AI model to your
+            device one time. Internet is used only to fetch model files, not to
+            send your questions.
+          </div>
+        </header>
+
+        <div id="chatWindow" class="chat-window">
+          <div class="chat-message system">
+            <div class="bubble">
+              New chat started ✅. Ask me any study question (school, college,
+              IT, UPSC, etc.).
+            </div>
+          </div>
+        </div>
+
+        <footer class="chat-input-row">
+          <div class="tokens-row">
+            <span id="tokenInfo">Tokens: 0 · Model: –</span>
+          </div>
+          <div class="input-row">
+            <textarea
+              id="userInput"
+              class="chat-input"
+              placeholder="Ask Nira AI anything about your studies..."
+              rows="2"
+            ></textarea>
+            <button id="sendBtn" class="primary-btn send-btn">Send</button>
+          </div>
+
+          <div class="quick-topics">
+            <button class="chip">School</button>
+            <button class="chip">College</button>
+            <button class="chip">IT / Coding</button>
+            <button class="chip">UPSC / Govt Exams</button>
+            <button class="chip">Competitive Exams</button>
+          </div>
+        </footer>
+      </section>
+    </main>
+
+    <!-- Privacy modal -->
+    <div id="privacyModal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <h2>Privacy &amp; Data</h2>
+        <p>
+          Nira AI Lite runs the AI model directly on your device using WebGPU.
+          We do <strong>not</strong> collect, store, or share any of your
+          questions or answers on our servers.
+        </p>
+        <ul>
+          <li>Your chats never leave your phone or browser.</li>
+          <li>Only anonymised data may be collected by Google AdMob (for ads).</li>
+          <li>
+            You can clear the browser data / app data at any time to remove all
+            cached models and chats from your device.
+          </li>
+        </ul>
+        <button id="closePrivacyBtn" class="primary-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WebLLM + app -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
